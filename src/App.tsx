@@ -24,8 +24,17 @@ function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showAddToHome, setShowAddToHome] = useState(false);
 
-  // Initialize stores on app startup
+  // Initialize Telegram WebApp and stores on app startup
   useEffect(() => {
+    // Initialize Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+      // Set theme color
+      window.Telegram.WebApp.headerColor = '#001529';
+      window.Telegram.WebApp.backgroundColor = '#f5f5f5';
+    }
+    
     initializeStores();
   }, []);
 
