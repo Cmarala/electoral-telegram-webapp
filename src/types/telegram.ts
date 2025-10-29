@@ -48,6 +48,10 @@ export interface TelegramWebApp {
   sendData(data: string): void;
   switchInlineQuery(query: string, choose_chat_types?: string[]): void;
   openLink(url: string, options?: { try_instant_view?: boolean }): void;
+  
+  // Home Screen methods (new in recent versions)
+  addToHomeScreen?(): void;
+  checkHomeScreenStatus?(callback: (status: 'unsupported' | 'unknown' | 'not_added' | 'added') => void): void;
   openTelegramLink(url: string): void;
   openInvoice(url: string, callback?: (status: string) => void): void;
   showPopup(params: TelegramPopupParams, callback?: (button_id?: string) => void): void;

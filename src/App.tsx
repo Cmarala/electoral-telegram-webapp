@@ -20,68 +20,58 @@ const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
 function App() {
-  // PWA Add to Home Screen state
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showAddToHome, setShowAddToHome] = useState(false);
+  // Telegram WebApp Add to Home Screen state
+  const [canAddToHome, setCanAddToHome] = useState(false);
 
   // Initialize Telegram WebApp and stores on app startup
   useEffect(() => {
     // Initialize Telegram WebApp
     if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-      // Set theme color
-      window.Telegram.WebApp.headerColor = '#001529';
-      window.Telegram.WebApp.backgroundColor = '#f5f5f5';
+      const tg = window.Telegram.WebApp;
+      
+      // Basic initialization
+      tg.ready();
+      tg.expand();
+      
+      // Set theme colors
+      tg.headerColor = '#001529';
+      tg.backgroundColor = '#f5f5f5';
+      
+      // Check home screen status (using any to bypass TypeScript limitations)
+      const tgAny = tg as any;
+      if (tgAny.checkHomeScreenStatus) {
+        try {
+          tgAny.checkHomeScreenStatus((status: string) => {
+            // Status can be 'unsupported', 'unknown', 'not_added', 'added'
+            setCanAddToHome(status === 'not_added' || status === 'unknown');
+          });
+        } catch (e) {
+          // Fallback: show add to home option
+          setCanAddToHome(true);
+        }
+      } else {
+        // Fallback: show add to home option if method doesn't exist
+        setCanAddToHome(true);
+      }
     }
     
     initializeStores();
   }, []);
 
-  // PWA Add to Home Screen setup
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      setDeferredPrompt(e);
-      setShowAddToHome(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  // Handle Add to Home Screen
-  const handleAddToHome = async () => {
-    if (!deferredPrompt) {
-      // Fallback for browsers that don't support PWA installation
-      if (navigator.userAgent.includes('iPhone') || navigator.userAgent.includes('iPad')) {
-        message.info('To add to home screen: Tap Share button → Add to Home Screen');
-      } else {
-        message.info('Use your browser menu to add this app to your home screen');
+  // Handle Add to Home Screen using Telegram WebApp API
+  const handleAddToHome = () => {
+    const tgAny = window.Telegram?.WebApp as any;
+    if (tgAny?.addToHomeScreen) {
+      try {
+        tgAny.addToHomeScreen();
+        message.success('Adding Electoral Management App to home screen...');
+      } catch (e) {
+        message.info('Add to Home Screen: Use your browser menu or Telegram settings');
       }
-      return;
-    }
-
-    // Show the install prompt
-    deferredPrompt.prompt();
-    
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      message.success('Electoral Management App added to home screen!');
     } else {
-      message.info('App installation cancelled');
+      // Fallback message
+      message.info('Add to Home Screen: Use your browser menu or Telegram settings');
     }
-    
-    // Clear the deferredPrompt
-    setDeferredPrompt(null);
-    setShowAddToHome(false);
   };
 
   // Get auth and config state
@@ -188,7 +178,7 @@ function App() {
                     </span>
                   )
                 },
-                ...(showAddToHome ? [{
+                ...(canAddToHome ? [{
                   title: (
                     <Button 
                       type="link" 
